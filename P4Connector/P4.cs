@@ -27,9 +27,9 @@ namespace P4Connector
             }
         }
 
-        public bool Auth(string username,string password)
+        public bool Auth(string username,string password,string workspace = null)
         {
-            user_ = auth_.Login(username, password);
+            user_ = auth_.Login(username, password, workspace);
             if(user_){
                 request_ = new Request(server_, user_);
              }
@@ -37,8 +37,8 @@ namespace P4Connector
         }
         public ChangelistsResult Changelists(Status status = Status.None,string workspace = null) { return request_.Changelists(status,workspace); }
         public ChangelistResult Changelist(int id,string workspace = null) { return request_.Changelist(id, workspace); }
-        public bool IsLoggedIn(string username) {
-            user_ = auth_.HasValidSession(username);
+        public bool IsLoggedIn(string username,string workspace = null) {
+            user_ = auth_.HasValidSession(username,workspace);
             return user_;
         }
         public AuthResult AuthResult { get=>user_; }

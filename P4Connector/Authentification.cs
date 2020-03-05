@@ -16,8 +16,14 @@ namespace P4Connector
             server = server_;
         }
         private Server server;
-        public AuthResult Login(string username, string password){
-            var output = Exec.Run("-p " + server.Host + " -u " + username + " login", password);
+        public AuthResult Login(string username, string password, string workspace = null){
+
+            var command = "-p " + server.Host + " -u " + username;
+            if(workspace != null){
+             command += "-c "+workspace;
+            }
+            command += " login ";
+            var output = Exec.Run(command, password);
             var match = Regex.Match(output, @"\b(invalid|failed)\b");
             if (match.Success)
             {
@@ -27,6 +33,7 @@ namespace P4Connector
             {
                 var client = new Client();
                 client.Username = username;
+                client.Workspace = workspace;
                 var authResult = new AuthResult(client, true);
                 RetriveToken(ref authResult);
                 ReadClientInformation(ref authResult);
@@ -34,14 +41,20 @@ namespace P4Connector
             }
 
         }
-        public AuthResult HasValidSession(string username)
+        public AuthResult HasValidSession(string username,string workspace=null)
         {
-            var output = Exec.Run("-p " + server.Host + " login -s");
+            var command = "-p " + server.Host + " -u " + username;
+            if(workspace != null){
+             command += " -c "+workspace;
+            }
+            command += " login -s";
+            var output = Exec.Run(command);
             var match = Regex.Match(output, @"("+ Regex.Escape(username) +")");
             if (match.Success)
             {
                 var client = new Client();
                 client.Username = username;
+                client.Workspace = workspace;
                 var authResult = new AuthResult(client, true);
                 RetriveToken(ref authResult);
                 ReadClientInformation(ref authResult);
@@ -68,8 +81,13 @@ namespace P4Connector
          }
         public void ReadClientInformation(ref AuthResult authClient)
         {
-             Debug.Assert(authClient.Status);
-                string command = "-p " + server.Host + " -u " + authClient.Client.Username + " client -o";
+                Debug.Assert(authClient.Status);
+                
+                string command = "-p " + server.Host + " -u " + authClient.Client.Username;
+                if(authClient.Client.Workspace != null){
+                    command +=" -c "+authClient.Client.Workspace;
+                }
+                command +=" client -o";
                 var output = Exec.Run(command);
                 var filtered = String.Join(Environment.NewLine,output
                     .Split('\n')
