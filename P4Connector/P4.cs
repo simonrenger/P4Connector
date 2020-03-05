@@ -13,6 +13,7 @@ namespace P4Connector
         private Server server_;
         private Authentification auth_;
         private Request request_ = null;
+        private Action action_ = null;
         private AuthResult user_;
         public P4(string host,string port = null)
         {
@@ -29,7 +30,9 @@ namespace P4Connector
         public bool Auth(string username,string password)
         {
             user_ = auth_.Login(username, password);
-            request_ = new Request(server_, user_);
+            if(user_){
+                request_ = new Request(server_, user_);
+             }
             return user_;
         }
         public ChangelistsResult Changelists(Status status = Status.None,string workspace = null) { return request_.Changelists(status,workspace); }
@@ -38,11 +41,23 @@ namespace P4Connector
             user_ = auth_.HasValidSession(username);
             return user_;
         }
+        public AuthResult AuthResult { get=>user_; }
         public Request Request { get {
                 if (request_ == null)
                 {
                     request_ = new Request(server_, user_);
                 }
                 return request_; } }
+        public Action Action
+        {
+            get
+            {
+                if (action_ == null)
+                {
+                    action_ = new Action(server_, user_);
+                }
+                return action_;
+            }
+        }
     }
 }
