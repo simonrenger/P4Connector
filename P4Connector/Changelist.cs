@@ -19,11 +19,12 @@ namespace P4Connector
         public string Description { get; set; }
         public Status Status { get; set; }
         public IEnumerable<File> Files {get;set;}
+        public IEnumerable<File> Shelved {get;set;}
         public DateTime Date { get; set; }
         public string User { get; set; }
         public string Workspace { get; set; }
 
-        internal static string StatusToStr(Status status)
+        public static string StatusToStr(Status status)
         {
             switch (status)
             {
@@ -33,7 +34,7 @@ namespace P4Connector
                 default:             return null;
             }
         }
-        internal static Status StringToStatus(string status)
+        public static Status StringToStatus(string status)
         {
             switch (status)
             {
