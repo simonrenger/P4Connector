@@ -40,7 +40,7 @@ namespace P4Connector
             for (var index = 0; index < list.Length - 2; index++)
             {
                 var entry = list[index];
-                var desc = list[index + 2];
+                var desc = list[index + 2].Trim();
                 var match = Regex.Match(entry, @"Change (.*) on (.*) by (.*)@(.*) \*(pending|shelved|submitted)\*");
                 if (match.Success)
                 {
@@ -56,20 +56,32 @@ namespace P4Connector
             return new ChangelistsResult(resulst, resulst.Count > 0);
         }
 
+        public FilesResult Files(int changeListId){
+            return ReuqestFiles(changeListId);
+        }
         public FilesResult Files(ChangelistResult changeListId)
         {
             Debug.Assert(changeListId);
-            return Files(changeListId.Changelist.Id);
+            return ReuqestFiles(changeListId.Changelist.Id);
         }
-        public FilesResult Files(int changeListId)
+        public FilesResult Shelved(int changeListId){
+        return ReuqestFiles(changeListId,true);
+        }
+        public FilesResult Shelved(ChangelistResult changeListId){
+            Debug.Assert(changeListId);
+            return ReuqestFiles(changeListId.Changelist.Id,true);
+        }
+        private FilesResult ReuqestFiles(int changeListId, bool shelved = false)
         {
             var result = new List<File>();
-            string command = "-p " + Server.Host + " -u " + Client.Username + " describe -s -S " + changeListId;
+            string command = "-p " + Server.Host + " -u " + Client.Username + " describe -s ";
+                if(shelved) command += " -S ";
+                command += changeListId;
             var output = Exec.Run(command);
-            var match = Regex.Match(output, @"(\.\.\.\s\/\/(.*)\/(.*)#(.*)\s(.*))");
             var list = output.Split('\n');
             for (var index = 0; index < list.Length - 2; index++)
             {
+                 var match = Regex.Match(list[index], @"(\.\.\.\s\/\/(.*)\/(.*)#(.*)\s(.*))");
                 if (match.Success)
                 {
                     var groups = match.Groups;
@@ -89,12 +101,13 @@ namespace P4Connector
             var result = new List<Workspace>();
             string command = "-p " + Server.Host + " -u " + Client.Username + " workspaces -u "+ Client.Username;
             var output = Exec.Run(command);
-            var match = Regex.Match(output, @"Client\s(.*)\s([0-9]+\/[0-9]+\/[0-9]+)\sroot\s(.*)\s'Created by(.*)'");
             var list = output.Split('\n');
             for (var index = 0; index < list.Length - 2; index++)
             {
+                 var match = Regex.Match(list[index], @"Client\s(.*)\s([0-9]+\/[0-9]+\/[0-9]+)\sroot\s(.*)\s'Created by(.*)'");
                 if (match.Success)
                 {
+
                     var groups = match.Groups;
                     var workspace = new Workspace();
                     workspace.Name = groups[1].Value;
@@ -106,6 +119,7 @@ namespace P4Connector
             }
             return new WorkspacesResult(result, result.Count > 0);
         }
+
         private static Changelist CreateChangelist(GroupCollection groups)
         {
             var changelist = new Changelist();

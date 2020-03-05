@@ -29,6 +29,7 @@ namespace P4Connector
                 client.Username = username;
                 var authResult = new AuthResult(client, true);
                 RetriveToken(ref authResult);
+                ReadClientInformation(ref authResult);
                 return authResult;
             }
 
@@ -43,6 +44,7 @@ namespace P4Connector
                 client.Username = username;
                 var authResult = new AuthResult(client, true);
                 RetriveToken(ref authResult);
+                ReadClientInformation(ref authResult);
                 return authResult;
             }
             return new AuthResult(new Client() { Username = username }, false);
@@ -64,5 +66,42 @@ namespace P4Connector
                 authResult = new AuthResult(client, false);
             }
          }
+        public void ReadClientInformation(ref AuthResult authClient)
+        {
+             Debug.Assert(authClient.Status);
+                string command = "-p " + server.Host + " -u " + authClient.Client.Username + " client -o";
+                var output = Exec.Run(command);
+                var filtered = String.Join(Environment.NewLine,output
+                    .Split('\n')
+                    .Where(entry => !entry.Contains('#'))
+                    .Select(entry => entry));
+                var client = new Client();
+                var match = Regex.Match(filtered, @"Client:(.*)Update",RegexOptions.Singleline);
+                if(match.Success) {
+                    var result = match.Groups;
+                    client.Workspace = result[1].Value.Trim().Replace("\r","").Replace("\t","").Replace("\n","");
+                }
+                match = Regex.Match(filtered, @"Update:(.*)Access",RegexOptions.Singleline);
+                if(match.Success) {
+                    var result = match.Groups;
+                    client.Update = DateTime.Parse(result[1].Value);
+                }
+                match = Regex.Match(filtered, @"Access:(.*)Owner",RegexOptions.Singleline);
+                if(match.Success) {
+                    var result = match.Groups;
+                    client.Access = DateTime.Parse(result[1].Value);
+                }
+                match = Regex.Match(filtered, @"Owner:(.*)Host",RegexOptions.Singleline);
+                if(match.Success) {
+                    var result = match.Groups;
+                    client.Username = result[1].Value.Trim().Replace("\r","").Replace("\t","").Replace("\n","");
+                }
+                match = Regex.Match(filtered, @"Root:(.*)[^Submit]Options:",RegexOptions.Singleline);
+                if(match.Success) {
+                    var result = match.Groups;
+                    client.Root = result[1].Value.Trim().Replace("\r","").Replace("\t","").Replace("\n","");
+                }
+                authClient = new AuthResult(client,authClient);
+        }
     }
 }
